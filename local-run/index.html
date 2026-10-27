@@ -1,0 +1,151 @@
+<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Daily Dev Dashboard</title>
+<style>
+:root{--bg:#f6f7f9;--card:#fff;--fg:#1d2330;--mut:#6b7385;--bd:#e2e5ec;--ac:#2563eb;--err:#c62828;--gl:#e24329;--jr:#0052cc;--ok:#2e9d57;--warn:#e0a100}
+@media(prefers-color-scheme:dark){:root{--bg:#12151c;--card:#1b2029;--fg:#e6e9f0;--mut:#8b94a8;--bd:#2a3140;--ac:#6ea0ff;--err:#ff7b72;--gl:#ff8a70;--jr:#6ea0ff}}
+@font-face{font-family:Vazirmatn;src:url(/fonts/Vazirmatn.woff2) format("woff2");font-weight:100 900;font-display:swap;unicode-range:U+0600-06FF,U+0750-077F,U+FB50-FDFF,U+FE70-FEFF,U+200C-200D}
+body{margin:0;padding:16px;background:var(--bg);color:var(--fg);font:14px/1.5 Vazirmatn,system-ui,sans-serif}
+button,select,input{font-family:inherit}
+header{display:flex;gap:12px;align-items:center;margin-bottom:16px}h1{font-size:18px;margin:0;flex:1}
+button,select{background:var(--ac);color:#fff;border:0;border-radius:6px;padding:6px 12px;cursor:pointer;font:inherit}
+button.s,select.s{background:none;color:var(--ac);border:1px solid var(--bd);padding:1px 8px;font-size:12px}
+button.s:hover{border-color:var(--ac)}button:disabled{opacity:.5}
+button.busy{cursor:progress}button.busy::before{content:"";display:inline-block;width:.8em;height:.8em;margin-inline-end:6px;vertical-align:-.1em;border:2px solid currentColor;border-top-color:transparent;border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+#kpi{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin-bottom:16px}
+.tile{background:var(--card);border:1px solid var(--bd);border-top:3px solid var(--c);border-radius:8px;padding:10px 12px;cursor:pointer;text-align:start;color:var(--fg)}
+.tile:hover{border-color:var(--c)}.tile .v{font-size:28px;font-weight:700;line-height:1.1}.tile .l{color:var(--mut);font-size:12px}
+.tile .new{color:var(--ok);font-size:12px;font-weight:600}.tile.err .v{color:var(--err)}
+#bar{display:flex;height:10px;border-radius:5px;overflow:hidden;background:var(--bd);margin:6px 0 2px}
+main{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;align-items:start}
+main section{margin:0}
+main>p{grid-column:1/-1}
+@media(max-width:1100px){main{grid-template-columns:minmax(0,1fr)}}
+section{background:var(--card);border:1px solid var(--bd);border-radius:8px;padding:12px;margin-bottom:16px;overflow-x:auto}
+h2{font-size:15px;margin:0 0 8px}
+.tabs{display:flex;gap:4px;border-bottom:1px solid var(--bd);margin-bottom:8px;flex-wrap:wrap}
+.tab{background:none;color:var(--mut);border-radius:6px 6px 0 0;border-bottom:2px solid transparent}
+.tab.on{color:var(--fg);border-bottom-color:var(--ac);font-weight:600}
+.n{background:var(--bd);color:var(--fg);border-radius:10px;padding:0 7px;font-size:12px;margin-inline-start:6px}
+table{width:100%;border-collapse:collapse}th{color:var(--mut);font-size:12px;font-weight:600;text-align:start;padding:4px 8px;white-space:nowrap}
+td{padding:6px 8px;border-top:1px solid var(--bd);vertical-align:top}tr:hover td{background:color-mix(in srgb,var(--ac) 6%,transparent)}
+a{color:var(--ac);text-decoration:none}a:hover{text-decoration:underline}
+.m{color:var(--mut);font-size:12px}.err{color:var(--err)}.k{font-weight:600;direction:ltr;display:inline-block;white-space:nowrap}
+.acts{display:flex;gap:6px;flex-wrap:wrap}.nw{white-space:nowrap}
+.pill{border-radius:10px;padding:0 8px;font-size:12px;background:var(--bd);white-space:nowrap}
+.done{background:var(--ok);color:#fff}.indeterminate{background:var(--warn);color:#000}
+.badge{background:var(--ok);color:#fff;border-radius:4px;padding:0 5px;font-size:11px;margin-inline-end:6px}
+.menu{position:fixed;z-index:10;background:var(--card);border:1px solid var(--bd);border-radius:8px;box-shadow:0 6px 20px rgba(0,0,0,.25);padding:4px;min-width:170px;display:flex;flex-direction:column}
+.menu button{background:none;color:var(--fg);text-align:start;border-radius:4px}.menu button:hover{background:color-mix(in srgb,var(--ac) 15%,transparent)}
+.age-warn,.age-bad{border-radius:10px;padding:0 8px;font-size:12px;font-weight:600;white-space:nowrap}
+.age-warn{background:var(--warn);color:#000}.age-bad{background:var(--err);color:#fff}
+.sm{font-size:11px}
+#toast{position:fixed;bottom:16px;inset-inline-start:16px;background:var(--fg);color:var(--bg);padding:8px 14px;border-radius:6px;display:none}
+</style>
+<header><h1 data-t="title"></h1><span id="t" class="m"></span>
+  <button class="s" id="lang" onclick="setLang(L==='en'?'fa':'en')"></button><button id="refresh" onclick="load()" data-t="refresh"></button></header>
+<div id="kpi"></div><main id="m"></main><div id="toast"></div>
+<script>
+const I={en:{title:'Daily Dev Dashboard',refresh:'Refresh',loading:'Loading…',updated:'Updated',none:'nothing 🎉',
+  approve:'Approve',comment:'Comment',done:'Mark done',assign:'Assign to me',transition:'Transition…',
+  prompt:'Comment text:',ok:'Done',confirmApprove:'Approve this merge request?',ago:['m ago','h ago','d ago'],lang:'فارسی',
+  newc:'new',newb:'NEW',jstat:'Jira status mix',c_title:'Title',c_project:'Project',c_author:'Author',c_status:'Status',c_updated:'Updated',
+  c_summary:'Summary',c_priority:'Priority',c_actions:'Actions',c_created:'Created',today:'today',days:'days',hours:'hours',merged:'Merged',notmerged:'Not merged',f_all:'All',c_threads:'Review threads',open:'open',resolved:'resolved',tthreads:'Review threads (all MRs)',c_key:'Key',q:{}},
+ fa:{title:'داشبورد روزانه توسعه',refresh:'بازخوانی',loading:'در حال بارگذاری…',updated:'به‌روزرسانی',none:'موردی نیست 🎉',
+  approve:'تأیید',comment:'نظر',done:'انجام شد',assign:'واگذاری به من',transition:'تغییر وضعیت…',
+  prompt:'متن نظر:',ok:'انجام شد',confirmApprove:'این درخواست ادغام تأیید شود؟',ago:['دقیقه پیش','ساعت پیش','روز پیش'],lang:'English',
+  newc:'جدید',newb:'جدید',jstat:'وضعیت تسک‌های جیرا',c_title:'عنوان',c_project:'پروژه',c_author:'نویسنده',c_status:'وضعیت',c_updated:'به‌روزرسانی',
+  c_summary:'خلاصه',c_priority:'اولویت',c_actions:'عملیات',c_created:'ایجاد',today:'امروز',days:'روز',hours:'ساعت',merged:'ادغام‌شده',notmerged:'ادغام‌نشده',f_all:'همه',c_threads:'نظرات بازبینی',open:'باز',resolved:'حل‌شده',tthreads:'نظرات بازبینی (همه MRها)',c_key:'کلید',
+  q:{'Review requested from me':'درخواست بررسی از من','My open MRs':'MRهای باز من','Updated in last 24h (mine)':'به‌روزشده در ۲۴ ساعت گذشته (من)',
+     'Pending todos':'کارهای در انتظار','Assigned to me (open)':'واگذارشده به من (باز)','Changed in last 24h':'تغییریافته در ۲۴ ساعت گذشته',
+     'Reported by me (open)':'گزارش‌شده توسط من (باز)'}}};
+const ls=(k,v)=>{try{if(v===undefined)return localStorage.getItem(k);localStorage.setItem(k,v)}catch{}};
+let L=ls('lang')||'en', D=null, TAB={}, MF='all', // MF: merged filter for MR tables
+ PREV=JSON.parse(ls('seen')||'null'); // PREV: urls seen at last visit, fixed for this page session
+const T=k=>I[L][k]??k, Q=n=>I[L].q[n]||n, esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const fmt=n=>L==='fa'?n.toLocaleString('fa'):n;
+const ago=d=>{const s=(Date.now()-new Date(d))/1000,a=T('ago');
+  return s<3600?fmt(Math.round(s/60))+' '+a[0]:s<86400?fmt(Math.round(s/3600))+' '+a[1]:fmt(Math.round(s/86400))+' '+a[2]};
+const isNew=(sys,g,i)=>PREV&&!(PREV[sys+'/'+g.name]||[]).includes(i.url);
+function toast(s,bad){const e=document.getElementById('toast');e.textContent=s;e.style.background=bad?'var(--err)':'';e.style.display='block';setTimeout(()=>e.style.display='none',bad?6000:2500)}
+function setLang(l){L=l;ls('lang',l);document.documentElement.lang=l;document.documentElement.dir=l==='fa'?'rtl':'ltr';
+  document.querySelectorAll('[data-t]').forEach(e=>e.textContent=T(e.dataset.t));document.getElementById('lang').textContent=T('lang');if(D)render()}
+async function post(o){const r=await fetch('/api/action',{method:'POST',headers:{'X-Dash':'1'},body:JSON.stringify(o)});
+  const j=await r.json();if(!r.ok)throw new Error(j.error);return j}
+async function run(o,btn){if(btn)btn.disabled=true;
+  try{await post(o);toast(T('ok'));load()}catch(e){toast(e.message,1);if(btn)btn.disabled=false}}
+function comment(o,b){const text=prompt(T('prompt'));if(text)run({...o,action:o.c,text},b)}
+let MENU=null;
+const closeMenu=()=>{MENU?.remove();MENU=null};
+document.addEventListener('click',closeMenu);document.addEventListener('keydown',e=>e.key==='Escape'&&closeMenu());window.addEventListener('scroll',closeMenu,true);
+function openMenu(anchor,entries){ // entries: [[label, fn(fill)]]; fill(entries) swaps the menu content (used for the transition sub-list)
+  closeMenu();const m=document.createElement('div');m.className='menu';
+  const fill=es=>{m.innerHTML='';for(const [label,fn] of es){const b=document.createElement('button');b.textContent=label;b.onclick=e=>{e.stopPropagation();fn(fill)};m.append(b)}};
+  fill(entries);document.body.append(m);MENU=m;
+  const r=anchor.getBoundingClientRect(),w=m.offsetWidth,h=m.offsetHeight,rtl=document.documentElement.dir==='rtl';
+  m.style.top=Math.max(8,r.bottom+h+8>innerHeight?r.top-h-4:r.bottom+4)+'px';
+  m.style.left=Math.min(Math.max(8,rtl?r.right-w:r.left),innerWidth-w-8)+'px'}
+const A={
+  mr:(i,a)=>[[T('approve'),()=>{closeMenu();confirm(T('confirmApprove'))&&run({action:'gl-approve',pid:i.pid,iid:i.iid},a)}],[T('comment'),()=>{closeMenu();comment({c:'gl-comment',pid:i.pid,iid:i.iid},a)}]],
+  todo:(i,a)=>[[T('done'),()=>{closeMenu();run({action:'gl-todo-done',id:i.id},a)}]],
+  issue:(i,a)=>[[T('comment'),()=>{closeMenu();comment({c:'jira-comment',key:i.key},a)}],[T('assign'),()=>{closeMenu();run({action:'jira-assign-me',key:i.key},a)}],
+    [T('transition'),async fill=>{try{const ts=await post({action:'jira-transitions',key:i.key});fill(ts.map(t=>[t.name,()=>{closeMenu();run({action:'jira-transition',key:i.key,id:t.id},a)}]))}catch(e){closeMenu();toast(e.message,1)}}]]};
+const link=i=>`<a dir="auto" href="${esc(i.url)}" target="_blank">${esc(i.title)}</a><div class="m sm" dir="ltr">${esc(i.project)}</div>`;
+const COLS={
+  mr:[['c_title',(i,n)=>(n?`<span class="badge">${T('newb')}</span>`:'')+link(i)],['c_author',i=>esc(i.author)],['c_status',i=>`<span class="pill">${esc(i.status)}</span> <span class="pill ${i.merged?'done':''}">${esc(T(i.merged?'merged':'notmerged'))}</span>`],['c_threads',i=>i.open==null?'':`<span class="nw"><b class="${i.open?'err':''}">${fmt(i.open)}</b> ${esc(T('open'))} · <span style="color:var(--ok)">${fmt(i.resolved)}</span> ${esc(T('resolved'))}</span>`]],
+  todo:[['c_title',(i,n)=>(n?`<span class="badge">${T('newb')}</span>`:'')+link(i)],['c_status',i=>`<span class="pill">${esc(i.status)}</span>`]],
+  issue:[['c_key',i=>`<a class="k" href="${esc(i.url)}" target="_blank">${esc(i.key)}</a>`],['c_summary',(i,n)=>(n?`<span class="badge">${T('newb')}</span>`:'')+`<span dir="auto">${esc(i.title)}</span>`],
+    ['c_status',i=>`<span class="pill ${esc(i.cat)}">${esc(i.state)}</span>`],['c_priority',i=>esc(i.priority)]]};
+const dt=d=>new Date(d).toLocaleString(L==='fa'?'fa-IR':undefined,{dateStyle:'short',timeStyle:'short'});
+const when=d=>`${esc(ago(d))}<div class="m sm">${esc(dt(d))}</div>`; // relative text, exact timestamp below
+const created=d=>{const ms=Date.now()-new Date(d),n=Math.floor(ms/864e5),h=Math.floor(ms/36e5)%24; // age in days: 2 = yellow, >2 = red
+  const span=[n&&fmt(n)+' '+esc(T('days')),(h||!n)&&fmt(h)+' '+esc(T('hours'))].filter(Boolean).join(' ');
+  return `<span class="${n>2?'age-bad':n===2?'age-warn':''}">${span}</span><div class="m sm">${esc(dt(d))}</div>`};
+function table(sys,g){
+  const d=document.createElement('div');
+  if(g.error){d.className='err ltr';d.textContent=g.error;return d}
+  const items=g.items[0]?.type==='mr'?g.items.filter(i=>MF==='all'||(MF==='merged')===i.merged):g.items;
+  if(!items.length){d.className='m';d.textContent=T('none');return d}
+  const type=items[0].type,cols=COLS[type],hasCreated=type!=='issue',tbl=document.createElement('table');
+  tbl.innerHTML='<tr>'+cols.map(c=>`<th>${esc(T(c[0]))}</th>`).join('')+(hasCreated?`<th>${esc(T('c_created'))}</th>`:'')+`<th>${esc(T('c_updated'))}</th><th>${esc(T('c_actions'))}</th></tr>`;
+  for(const i of items){const tr=tbl.insertRow(),n=isNew(sys,g,i);
+    tr.innerHTML=cols.map(c=>`<td>${c[1](i,n)}</td>`).join('')+(hasCreated?`<td class="nw">${created(i.created)}</td>`:'')+`<td class="nw">${when(i.updated)}</td><td><button class="s ops" title="${esc(T('c_actions'))}">⋯</button></td>`;
+    const b=tr.querySelector('.ops');b.onclick=e=>{e.stopPropagation();openMenu(b,A[i.type](i,b))}}
+  return tbl}
+function render(){
+  // KPI tiles: one per query group + Jira status mix
+  const k=document.getElementById('kpi');k.innerHTML='';
+  for(const [sys,v] of Object.entries(D))for(const g of v.groups){
+    const nw=g.items?g.items.filter(i=>isNew(sys,g,i)).length:0, b=document.createElement('button');
+    b.className='tile'+(g.error?' err':'');b.style.setProperty('--c',sys==='gitlab'?'var(--gl)':'var(--jr)');
+    b.innerHTML=`<div class="v">${g.error?'!':fmt(g.items.length)}</div><div class="l">${esc(Q(g.name))}</div>`+(nw?`<div class="new">+${fmt(nw)} ${esc(T('newc'))}</div>`:'');
+    b.onclick=()=>{TAB[sys]=g.name;render();document.getElementById('sec-'+sys).scrollIntoView({behavior:'smooth'})};k.append(b)}
+  const mrs=new Map();for(const g of D.gitlab?.groups||[])for(const i of g.items||[])if(i.type==='mr'&&i.open!=null)mrs.set(i.url,i);
+  if(mrs.size){let o=0,r=0;mrs.forEach(i=>{o+=i.open;r+=i.resolved});const d=document.createElement('div');d.className='tile';d.style.setProperty('--c','var(--gl)');d.style.cursor='default';
+    d.innerHTML=`<div class="v"><span class="${o?'err':''}">${fmt(o)}</span> <span class="m">/ <span style="color:var(--ok)">${fmt(r)}</span></span></div><div class="l">${esc(T('tthreads'))}: ${esc(T('open'))} / ${esc(T('resolved'))}</div>`;k.append(d)}
+  const jg=D.jira?.groups[0]?.items;
+  if(jg?.length){const c={};jg.forEach(i=>c[i.cat]=(c[i.cat]||0)+1);const col={new:'var(--mut)',indeterminate:'var(--warn)',done:'var(--ok)'};
+    const d=document.createElement('div');d.className='tile';d.style.setProperty('--c','var(--jr)');d.style.cursor='default';
+    d.innerHTML=`<div class="l">${esc(T('jstat'))}</div><div id="bar">`+Object.entries(c).map(([s,n])=>`<span title="${esc(s)}: ${n}" style="flex:${n};background:${col[s]||'var(--ac)'}"></span>`).join('')+'</div><div class="m">'+Object.entries(c).map(([s,n])=>`${esc(s)} ${fmt(n)}`).join(' · ')+'</div>';k.append(d)}
+  // one section per system, one tab per query
+  const m=document.getElementById('m');m.innerHTML='';
+  for(const [sys,v] of Object.entries(D)){
+    const cur=v.groups.find(g=>g.name===TAB[sys])||v.groups[0], s=document.createElement('section');s.id='sec-'+sys;
+    s.innerHTML=`<h2>${sys==='gitlab'?'GitLab':'Jira'} <a class="m" href="${esc(v.url)}" target="_blank">${esc(v.url)}</a></h2><div class="tabs"></div>`;
+    for(const g of v.groups){const b=document.createElement('button');b.className='tab'+(g===cur?' on':'');
+      b.innerHTML=esc(Q(g.name))+`<span class="n">${g.items?fmt(g.items.length):'!'}</span>`;b.onclick=()=>{TAB[sys]=g.name;render()};s.querySelector('.tabs').append(b)}
+    if(cur.items?.[0]?.type==='mr'){const f=document.createElement('select');f.className='s';
+      f.innerHTML=['all','merged','notmerged'].map(v=>`<option value="${v}">${esc(T(v==='all'?'f_all':v))}</option>`).join('');
+      f.value=MF;f.onchange=()=>{MF=f.value;render()};s.append(f)}
+    const t=table(sys,cur);s.append(typeof t==='string'?Object.assign(document.createElement('div'),{innerHTML:t}):t);m.append(s)}
+  document.getElementById('t').textContent=T('updated')+' '+new Date().toLocaleTimeString(L==='fa'?'fa':undefined)}
+async function load(){
+  if(!D)document.getElementById('m').innerHTML=`<p class="m">${esc(T('loading'))}</p>`;
+  const rb=document.getElementById('refresh');rb.disabled=true;rb.classList.add('busy');
+  try{D=await (await fetch('/api/data')).json();render();
+    const seen={};for(const [s,v] of Object.entries(D))for(const g of v.groups)if(g.items)seen[s+'/'+g.name]=g.items.map(i=>i.url);
+    ls('seen',JSON.stringify(seen));if(!PREV){PREV=seen;} // first ever visit: nothing is "new"
+  }catch(e){document.getElementById('m').innerHTML='<p class="err">'+esc(e)+'</p>'}
+  finally{rb.disabled=false;rb.classList.remove('busy')}}
+setLang(L);load();setInterval(load,5*60e3);
+</script>

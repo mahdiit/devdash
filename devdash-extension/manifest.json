@@ -1,0 +1,21 @@
+{
+  "manifest_version": 3,
+  "name": "Daily Dev Dashboard",
+  "version": "1.1.0",
+  "description": "Daily status of your self-hosted GitLab (reviews, MRs, todos) and Jira (tasks) with quick actions.",
+  "permissions": [
+    "storage"
+  ],
+  "optional_host_permissions": [
+    "https://*/*",
+    "http://*/*"
+  ],
+  "action": {
+    "default_title": "Open dashboard"
+  },
+  "background": {
+    "service_worker": "background.js"
+  },
+  "options_page": "options.html",
+  "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAw4qejKzfV7s4cRLCNzrhxUpDBJWGixsP55SodVvPZdXuvY+QEb6jzTVqoaXWJh+ZPKJANumHoSFXFrxu+bFjWtn6CbxwJOryZ160WsKIJBubeQD5fZiuZ4+XmkE1h59Yig4Ghs14TvDKMxhKW8Z+J9iniRf0HcbF66kAPOGuxfPatWPXif70IPRTwWNQzAMO4ZTLxLNsd2sytD3vsprSNQnmqrJPcWuCpIdIiGnDs1sDBSv2b14T/OtT89+HGK2jslLAIOFwM+qHLlrITDVmHcCd6i2l8CgSAmImH2ZGhhRVv4vDtB1YwhTv2yJIiuTE/sbYRsRc16Dj15b1T4GPiwIDAQAB"
+}

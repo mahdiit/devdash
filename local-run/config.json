@@ -1,0 +1,27 @@
+{
+  "port": 8787,
+  "verify_ssl": true,
+  "gitlab": {
+    "url": "https://git.local",
+    "token": "glpat-r-",
+    "username": "ma.y",
+    "queries": {
+      "Review requested from me": "/api/v4/merge_requests?scope=all&state=opened&reviewer_username={user}",
+      "My open MRs": "/api/v4/merge_requests?scope=all&state=opened&author_username={user}",
+      "Updated in last 24h (mine)": "/api/v4/merge_requests?scope=all&author_username={user}&updated_after={since24h}",
+      "Pending todos": "/api/v4/todos?state=pending"
+    }
+  },
+  "jira": {
+    "url": "https://jira.local",
+    "auth": "bearer",
+    "token": "NTkxNTEyM",
+    "username": "ma.y",
+    "api": "/rest/api/2",
+    "queries": {
+      "Assigned to me (open)": "assignee = currentUser() AND resolution = Unresolved ORDER BY priority DESC, updated DESC",
+      "Changed in last 24h": "(assignee = currentUser() OR reporter = currentUser() OR watcher = currentUser()) AND updated >= -1d ORDER BY updated DESC",
+      "Reported by me (open)": "reporter = currentUser() AND resolution = Unresolved ORDER BY updated DESC"
+    }
+  }
+}

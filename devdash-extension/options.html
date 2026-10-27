@@ -1,0 +1,14 @@
+<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Dashboard settings</title>
+<link rel="stylesheet" href="style.css">
+<div class="wrap">
+  <header><h1 data-t="s_title"></h1>
+    <label class="m"><span data-t="lang_l"></span> <select class="f" id="lang"><option value="en">English</option><option value="fa">فارسی</option></select></label>
+    <label class="m"><span data-t="refresh_l"></span> <input id="refreshMin" type="number" min="1" max="120" style="width:70px"></label></header>
+  <div class="card">
+    <div class="tabs"><button class="tab on" data-tab="jira" data-t="tab_jira"></button><button class="tab" data-tab="gitlab" data-t="tab_gitlab"></button></div>
+    <div id="panel"></div>
+    <div class="bar2"><button id="save" data-t="save"></button><button class="s" id="test" data-t="test"></button><button class="s" id="reset" data-t="reset"></button><span id="msg" class="m"></span></div>
+  </div>
+</div>
+<script type="module" src="options.js"></script>
