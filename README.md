@@ -22,6 +22,7 @@ Settings (language, refresh interval, queries) are stored in `chrome.storage.loc
 
 ```bash
 cd local-run
+cp config.example.json config.json   # then edit it
 node server.js            # or: node server.js path/to/config.json
 ```
 
@@ -33,7 +34,7 @@ Config keys:
 - `gitlab`: `url`, `token` (personal access token), `username`, `queries`
 - `jira`: `url`, `auth` (`bearer` or `basic`), `token`, `username`, `api`, `queries`
 
-**Never commit real tokens.** Keep a private copy of `config.json` outside git.
+**Never commit real tokens.** `config.json` is gitignored; copy `config.example.json` to create it.
 
 ## Queries
 

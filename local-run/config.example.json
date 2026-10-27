@@ -3,7 +3,7 @@
   "verify_ssl": true,
   "gitlab": {
     "url": "https://git.local",
-    "token": "glpat-r-",
+    "token": "YOUR_TOKEN",
     "username": "ma.y",
     "queries": {
       "Review requested from me": "/api/v4/merge_requests?scope=all&state=opened&reviewer_username={user}",
@@ -15,7 +15,7 @@
   "jira": {
     "url": "https://jira.local",
     "auth": "bearer",
-    "token": "NTkxNTEyM",
+    "token": "YOUR_TOKEN",
     "username": "ma.y",
     "api": "/rest/api/2",
     "queries": {
